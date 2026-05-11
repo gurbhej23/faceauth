@@ -21,7 +21,10 @@ function FaceRegister() {
       return;
     }
 
-    const imageSrc = webcamRef.current.getScreenshot();
+    const imageSrc = webcamRef.current.getScreenshot({
+      width: 640,
+      height: 480,
+    });
     if (!imageSrc) {
       setMessage("Failed to capture image. Please try again.");
       return;
@@ -57,11 +60,9 @@ function FaceRegister() {
           audio={false}
           mirrored={true}
           screenshotFormat="image/jpeg"
-          screenshotQuality={1}
+          screenshotQuality={0.95}
           videoConstraints={{
-            facingMode: "user",
-            width: 720,
-            height: 1280,
+            facingMode: "user", 
           }}
           className="w-full rounded-2xl"
         />

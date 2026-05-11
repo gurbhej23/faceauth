@@ -7,6 +7,7 @@ from .serializers import UserSerializer, LoginSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from .face_utils import extract_face_embedding
 import numpy as np
+from datetime import datetime, timedelta
 
 import bcrypt
 
@@ -104,7 +105,11 @@ class LoginView(APIView):
                     {"error": "Invalid password"}, status=status.HTTP_400_BAD_REQUEST
                 )
 
-            payload = {"user_id": str(user.id), "email": user.email}
+            payload = {
+                "user_id": str(user.id),
+                "email": user.email,
+                "exp": datetime.utcnow() + timedelta(hours=24),
+            }
 
             token = jwt.encode(payload, os.getenv("SECRET_KEY"), algorithm="HS256")
 
@@ -203,7 +208,11 @@ class FaceLoginView(APIView):
             print("Match:", distance < 0.45)
 
             if distance < 0.45:
-                payload = {"user_id": str(user.id), "email": user.email}
+                payload = {
+                    "user_id": str(user.id),
+                    "email": user.email,
+                    "exp": datetime.utcnow() + timedelta(hours=24),
+                }
                 token = jwt.encode(payload, os.getenv("SECRET_KEY"), algorithm="HS256")
                 return Response(
                     {

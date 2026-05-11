@@ -1,0 +1,14 @@
+Django==6.0.4
+djangorestframework==3.17.1
+django-cors-headers==4.9.0
+djangorestframework-simplejwt==5.5.1
+mongoengine==0.29.3
+python-dotenv==1.1.0
+bcrypt==4.3.0
+PyJWT==2.12.1
+deepface==0.0.99
+opencv-python-headless==4.13.0.92
+Pillow==11.3.0
+numpy==2.2.5
+gunicorn==25.3.0
+whitenoise==6.12.0

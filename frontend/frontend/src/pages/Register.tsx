@@ -92,7 +92,7 @@ function Register() {
     if (!webcamReady || capturedImage) return;
 
     faceCheckRef.current = setInterval(() => {
-      setFaceStatus(detectFaceInFrame() ? "detected" : "none");
+      setFaceStatus(detectFaceInFrame() ? "waiting" : "none");
     }, 800);
 
     return () => {
@@ -121,7 +121,7 @@ function Register() {
           lum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
         }
         const avg = lum / (data.length / 4);
-        if (avg < 40)
+        if (avg < 28)
           return resolve({
             passed: false,
             reason: "Too dark — find better lighting",
@@ -148,7 +148,7 @@ function Register() {
             );
           }
         }
-        if (blur / (w * h) < 8)
+        if (blur / (w * h) < 4.5)
           return resolve({ passed: false, reason: "Too blurry — hold steady" });
 
         resolve({ passed: true, reason: "Image looks clear ✅" });
@@ -304,8 +304,8 @@ function Register() {
       return;
     }
 
-    // Block capture if no face is visible
-    if (faceStatus !== "detected") {
+    // Backend face detection is the source of truth; only guard a missing video.
+    if (faceStatus !== "detected" && !webcamRef.current?.video) {
       setQualityMessage("No face detected — look directly at the camera");
       setCaptureStatus("bad");
       setTimeout(() => {
@@ -315,7 +315,10 @@ function Register() {
       return;
     }
 
-    const imageSrc = webcamRef.current?.getScreenshot();
+    const imageSrc = webcamRef.current?.getScreenshot({
+      width: 640,
+      height: 360,
+    });
     if (!imageSrc) {
       setQualityMessage("Failed to capture image");
       setCaptureStatus("bad");
@@ -332,7 +335,7 @@ function Register() {
 
     if (passed) {
       setCaptureStatus("good");
-      setQualityMessage(reason);
+      setQualityMessage("Image captured. Register to verify your face.");
       setFormData((prev) => ({ ...prev, image: imageSrc }));
     } else {
       // Quality failed — go back to live camera
@@ -370,6 +373,10 @@ function Register() {
       navigate("/");
     } catch (error) {
       const axiosError = error as { response?: { data?: { error?: string } } };
+      setCaptureStatus("bad");
+      setCapturedImage(null);
+      setFaceStatus("waiting");
+      setFormData((prev) => ({ ...prev, image: "" }));
       setQualityMessage(
         axiosError?.response?.data?.error || "Registration failed",
       );
@@ -382,32 +389,28 @@ function Register() {
 
   const borderRingColor =
     captureStatus === "good"
-      ? "ring-green-500 shadow-green-500/40"
+      ? "ring-yellow-400 shadow-yellow-400/30"
       : captureStatus === "bad"
         ? "ring-red-500 shadow-red-500/40"
         : captureStatus === "checking"
           ? "ring-yellow-400 shadow-yellow-400/30"
-          : faceStatus === "detected"
-            ? "ring-green-500 shadow-green-500/30"
-            : faceStatus === "none"
-              ? "ring-red-500 shadow-red-500/30"
-              : "ring-white/30";
+          : faceStatus === "none"
+            ? "ring-red-500 shadow-red-500/30"
+            : "ring-white/30";
 
   const liveMessage =
     captureStatus !== "idle"
       ? null
       : !webcamReady
         ? "Initializing camera..."
-        : faceStatus === "waiting"
-          ? "Position your face in the oval"
-          : faceStatus === "detected";
+        : faceStatus === "none"
+          ? "No face in the frame"
+          : "Position your face in the oval";
 
   const liveMessageColor =
-    faceStatus === "detected"
-      ? "text-green-400"
-      : faceStatus === "none"
-        ? "text-red-400"
-        : "text-yellow-300";
+    faceStatus === "none"
+      ? "text-red-400"
+      : "text-yellow-300";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center p-5">
@@ -477,17 +480,21 @@ function Register() {
                   audio={false}
                   mirrored={true}
                   screenshotFormat="image/jpeg"
-                  screenshotQuality={1}
-                  videoConstraints={{ facingMode: "user" }}
+                  screenshotQuality={0.95}
+                  videoConstraints={{
+                    facingMode: "user",
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                  }}
                   onUserMedia={() => setWebcamReady(true)}
                   onUserMediaError={() => setWebcamReady(false)}
                   style={{
                     position: "absolute",
-                    width: "160%",
-                    height: "160%",
-                    top: "-30%",
-                    left: "0%",
+                    width: "100%",
+                    height: "100%",
                     objectFit: "cover",
+                    transform: "scale(1.25)",
+                    transformOrigin: "center",
                   }}
                 />
               ) : (
@@ -496,11 +503,11 @@ function Register() {
                   alt="Captured"
                   style={{
                     position: "absolute",
-                    width: "160%",
-                    height: "160%",
-                    top: "-30%",
-                    left: "0%",
+                    width: "100%",
+                    height: "100%",
                     objectFit: "cover",
+                    transform: "scale(1.25)",
+                    transformOrigin: "center",
                   }}
                 />
               )}
@@ -521,7 +528,7 @@ function Register() {
             <p
               className={`mt-2 text-sm text-center font-medium ${
                 captureStatus === "good"
-                  ? "text-green-400"
+                  ? "text-yellow-300"
                   : captureStatus === "bad"
                     ? "text-red-400"
                     : "text-yellow-300"
@@ -553,8 +560,8 @@ function Register() {
             >
               Retake
             </button>
-            <div className="flex-1 bg-green-500/20 border border-green-500/30 rounded-xl py-3 text-center">
-              <p className="text-green-300 font-medium">Face captured ✅</p>
+            <div className="flex-1 bg-yellow-400/20 border border-yellow-400/30 rounded-xl py-3 text-center">
+              <p className="text-yellow-200 font-medium">Ready to verify</p>
             </div>
           </div>
         )}
@@ -570,7 +577,7 @@ function Register() {
         <p className="text-center text-gray-400 mt-6">
           Already have an account?
           <span
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/")}
             className="text-white ml-2 cursor-pointer hover:underline"
           >
             Login

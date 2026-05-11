@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import FaceRegister from "./pages/FaceRegister";
 import FaceLogin from "./pages/FaceLogin";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
   return (
@@ -12,9 +13,16 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/face-register" element={<FaceRegister />} />
-        <Route path="/face-login" element={<FaceLogin/>} />
+        <Route path="/face-login" element={<FaceLogin />} />
       </Routes>
     </BrowserRouter>
   );

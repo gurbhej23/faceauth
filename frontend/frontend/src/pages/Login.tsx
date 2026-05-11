@@ -109,7 +109,7 @@ function Login() {
         <p className="text-center text-gray-400 mt-6">
           Don't have an account?
           <span
-            onClick={() => navigate("/register")}
+            onClick={() => navigate("/register", { replace: true })}
             className="text-white ml-2 cursor-pointer hover:underline"
           >
             Create Account
