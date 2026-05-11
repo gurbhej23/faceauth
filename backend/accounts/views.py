@@ -19,6 +19,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+class HealthView(APIView):
+    def get(self, request):
+        return Response({"status": "ok"})
+
+
 class RegisterView(APIView):
     def post(self, request):
         print("Registration request received")
