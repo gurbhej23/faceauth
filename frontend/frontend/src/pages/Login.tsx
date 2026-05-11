@@ -16,7 +16,7 @@ function Login() {
       [e.target.name]: e.target.value,
     });
   };
-
+  console.log("API URL:", import.meta.env.VITE_API_BASE_URL);
   const handleSubmit = async () => {
     try {
       const response = await api.post("login/", formData);
