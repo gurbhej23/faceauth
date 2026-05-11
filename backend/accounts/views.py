@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.conf import settings
 from .models import User
 from .serializers import UserSerializer, LoginSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -81,7 +82,7 @@ class RegisterView(APIView):
             return Response({"message": "User registered successfully"})
 
         print("Serializer errors:", serializer.errors)
-        return Response(serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
@@ -116,7 +117,7 @@ class LoginView(APIView):
                 "exp": datetime.utcnow() + timedelta(hours=24),
             }
 
-            token = jwt.encode(payload, os.getenv("SECRET_KEY"), algorithm="HS256")
+            token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
             return Response(
                 {
@@ -130,7 +131,7 @@ class LoginView(APIView):
                 }
             )
 
-        return Response(serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FaceRegisterView(APIView):
@@ -218,7 +219,7 @@ class FaceLoginView(APIView):
                     "email": user.email,
                     "exp": datetime.utcnow() + timedelta(hours=24),
                 }
-                token = jwt.encode(payload, os.getenv("SECRET_KEY"), algorithm="HS256")
+                token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
                 return Response(
                     {
                         "match": True,
